@@ -1,0 +1,23 @@
+name: secure-auth
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: secure-auth-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: secure_auth
+      POSTGRES_USER: secure_auth_app
+      POSTGRES_PASSWORD: local_dev_only_change_me_7xQ9mL2r
+    ports:
+      - '5433:5432'
+    volumes:
+      - secure_auth_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U secure_auth_app -d secure_auth']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  secure_auth_postgres_data:

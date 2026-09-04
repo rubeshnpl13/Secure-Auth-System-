@@ -1,11 +1,33 @@
-// src/app.js
 import express from 'express';
+import { pool } from './db/pool.js';
 
 const app = express();
-app.use(express.json({ limit: '10kb' })); // small body limit — basic DoS protection
 
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', uptime: process.uptime() });
+app.use(express.json({ limit: '10kb' }));
+
+app.get('/', (req, res) => {
+  res.json({
+    name: 'Secure Auth System API',
+    status: 'running',
+    health: '/health',
+  });
+});
+
+app.get('/health', async (req, res) => {
+  try {
+    await pool.query('SELECT 1');
+
+    res.status(200).json({
+      status: 'ok',
+      database: 'connected',
+      uptime: process.uptime(),
+    });
+  } catch {
+    res.status(503).json({
+      status: 'unavailable',
+      database: 'disconnected',
+    });
+  }
 });
 
 export default app;

@@ -1,0 +1,23 @@
+{
+  "name": "secure-auth",
+  "version": "1.0.0",
+  "description": "Secure authentication system built with vanilla JavaScript and Node.js",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js"
+  },
+  "keywords": [
+    "authentication",
+    "nodejs",
+    "security",
+    "vanilla-javascript"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1"
+  }
+}

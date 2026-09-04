@@ -52,3 +52,49 @@ export function validateSignupInput(input) {
     },
   };
 }
+
+export function validateLoginInput(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return {
+      valid: false,
+      error: 'Invalid request body',
+    };
+  }
+
+  const { email, password } = input;
+
+  if (typeof email !== 'string' || typeof password !== 'string') {
+    return {
+      valid: false,
+      error: 'Invalid email or password',
+    };
+  }
+
+  const normalizedEmail = email.trim().toLowerCase();
+
+  if (
+    normalizedEmail.length === 0 ||
+    normalizedEmail.length > MAX_EMAIL_LENGTH ||
+    !EMAIL_PATTERN.test(normalizedEmail)
+  ) {
+    return {
+      valid: false,
+      error: 'Invalid email or password',
+    };
+  }
+
+  if (password.length === 0 || password.length > MAX_PASSWORD_LENGTH) {
+    return {
+      valid: false,
+      error: 'Invalid email or password',
+    };
+  }
+
+  return {
+    valid: true,
+    value: {
+      email: normalizedEmail,
+      password,
+    },
+  };
+}

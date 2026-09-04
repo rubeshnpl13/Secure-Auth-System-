@@ -1,11 +1,12 @@
 import express from 'express';
 import { pool } from './db/pool.js';
 import authRoutes from './routes/auth.routes.js';
+import cookieParser from 'cookie-parser';
 
 const app = express();
 
 app.use(express.json({ limit: '10kb' }));
-
+app.use(cookieParser());
 app.get('/', (req, res) => {
   res.json({
     name: 'Secure Auth System API',

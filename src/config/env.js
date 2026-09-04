@@ -8,7 +8,12 @@ const required = [
   'DB_NAME',
   'DB_USER',
   'DB_PASSWORD',
+  'JWT_ACCESS_SECRET',
 ];
+
+if (process.env.JWT_ACCESS_SECRET.length < 64) {
+  throw new Error('JWT_ACCESS_SECRET must be at least 64 characters long');
+}
 
 for (const key of required) {
   if (!process.env[key]) {
@@ -42,5 +47,10 @@ export const config = {
     name: process.env.DB_NAME,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
+  },
+  jwt: {
+    accessSecret: process.env.JWT_ACCESS_SECRET,
+    accessTokenTtl: '15m',
+    refreshTokenTtlDays: 7,
   },
 };

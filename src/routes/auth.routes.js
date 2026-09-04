@@ -1,10 +1,34 @@
 import { Router } from 'express';
-import { loginUser, registerUser } from '../services/auth.service.js';
+import {
+  loginUser,
+  logoutUser,
+  refreshUserSession,
+  registerUser,
+} from '../services/auth.service.js';
 import {
   validateLoginInput,
   validateSignupInput,
 } from '../validators/auth.validator.js';
 import { config } from '../config/env.js';
+
+function refreshCookieOptions() {
+  return {
+    httpOnly: true,
+    secure: config.env === 'production',
+    sameSite: 'strict',
+    path: '/api/auth',
+    maxAge: config.jwt.refreshTokenTtlDays * 24 * 60 * 60 * 1000,
+  };
+}
+
+function clearRefreshCookie(res) {
+  res.clearCookie('refresh_token', {
+    httpOnly: true,
+    secure: config.env === 'production',
+    sameSite: 'strict',
+    path: '/api/auth',
+  });
+}
 
 const router = Router();
 
@@ -46,19 +70,62 @@ router.post('/login', async (req, res, next) => {
       });
     }
 
-    res.cookie('refresh_token', result.refreshToken, {
-      httpOnly: true,
-      secure: config.env === 'production',
-      sameSite: 'strict',
-      path: '/api/auth',
-      maxAge: config.jwt.refreshTokenTtlDays * 24 * 60 * 60 * 1000,
-    });
+    res.cookie('refresh_token', result.refreshToken, refreshCookieOptions());
 
     return res.status(200).json({
       accessToken: result.accessToken,
       tokenType: 'Bearer',
       expiresIn: config.jwt.accessTokenTtl,
     });
+  } catch (error) {
+    next(error);
+  }
+});
+router.post('/refresh', async (req, res, next) => {
+  try {
+    const rawRefreshToken = req.cookies.refresh_token;
+
+    if (!rawRefreshToken || typeof rawRefreshToken !== 'string') {
+      clearRefreshCookie(res);
+
+      return res.status(401).json({
+        message: 'Session expired. Please sign in again.',
+      });
+    }
+
+    const result = await refreshUserSession(rawRefreshToken);
+
+    if (!result.refreshed) {
+      clearRefreshCookie(res);
+
+      return res.status(401).json({
+        message: 'Session expired. Please sign in again.',
+      });
+    }
+
+    res.cookie('refresh_token', result.refreshToken, refreshCookieOptions());
+
+    return res.status(200).json({
+      accessToken: result.accessToken,
+      tokenType: 'Bearer',
+      expiresIn: config.jwt.accessTokenTtl,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/logout', async (req, res, next) => {
+  try {
+    const rawRefreshToken = req.cookies.refresh_token;
+
+    if (typeof rawRefreshToken === 'string') {
+      await logoutUser(rawRefreshToken);
+    }
+
+    clearRefreshCookie(res);
+
+    return res.status(204).send();
   } catch (error) {
     next(error);
   }

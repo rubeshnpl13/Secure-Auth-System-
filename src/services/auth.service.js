@@ -1,6 +1,5 @@
 import argon2 from 'argon2';
 import { pool } from '../db/pool.js';
-
 import {
   createAccessToken,
   createTokenFamilyId,
@@ -85,4 +84,146 @@ export async function loginUser({ email, password }) {
     accessToken,
     refreshToken,
   };
+}
+
+export async function refreshUserSession(rawRefreshToken) {
+  const tokenHash = hashRefreshToken(rawRefreshToken);
+
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    const tokenResult = await client.query(
+      `
+        SELECT id, user_id, family_id, expires_at, revoked_at
+        FROM refresh_tokens
+        WHERE token_hash = $1
+        FOR UPDATE
+      `,
+      [tokenHash],
+    );
+
+    const existingToken = tokenResult.rows[0];
+
+    if (!existingToken) {
+      await client.query('ROLLBACK');
+      return { refreshed: false };
+    }
+
+    if (existingToken.revoked_at) {
+      await client.query(
+        `
+          UPDATE refresh_tokens
+          SET revoked_at = NOW()
+          WHERE family_id = $1
+            AND revoked_at IS NULL
+        `,
+        [existingToken.family_id],
+      );
+
+      await client.query('COMMIT');
+
+      return {
+        refreshed: false,
+        reuseDetected: true,
+      };
+    }
+
+    if (new Date(existingToken.expires_at) <= new Date()) {
+      await client.query(
+        `
+          UPDATE refresh_tokens
+          SET revoked_at = NOW()
+          WHERE id = $1
+            AND revoked_at IS NULL
+        `,
+        [existingToken.id],
+      );
+
+      await client.query('COMMIT');
+
+      return { refreshed: false };
+    }
+
+    const newRefreshToken = generateRefreshToken();
+    const newTokenHash = hashRefreshToken(newRefreshToken);
+    const newExpiresAt = refreshTokenExpiresAt();
+
+    const replacementResult = await client.query(
+      `
+        INSERT INTO refresh_tokens (
+          user_id,
+          token_hash,
+          family_id,
+          expires_at
+        )
+        VALUES ($1, $2, $3, $4)
+        RETURNING id
+      `,
+      [
+        existingToken.user_id,
+        newTokenHash,
+        existingToken.family_id,
+        newExpiresAt,
+      ],
+    );
+
+    const replacementTokenId = replacementResult.rows[0].id;
+
+    await client.query(
+      `
+        UPDATE refresh_tokens
+        SET revoked_at = NOW(),
+            replaced_by_token_id = $1
+        WHERE id = $2
+          AND revoked_at IS NULL
+      `,
+      [replacementTokenId, existingToken.id],
+    );
+
+    await client.query('COMMIT');
+
+    return {
+      refreshed: true,
+      accessToken: createAccessToken(existingToken.user_id),
+      refreshToken: newRefreshToken,
+    };
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function logoutUser(rawRefreshToken) {
+  const tokenHash = hashRefreshToken(rawRefreshToken);
+
+  const result = await pool.query(
+    `
+      UPDATE refresh_tokens
+      SET revoked_at = NOW()
+      WHERE token_hash = $1
+        AND revoked_at IS NULL
+      RETURNING family_id
+    `,
+    [tokenHash],
+  );
+
+  if (result.rowCount === 0) {
+    return;
+  }
+
+  const familyId = result.rows[0].family_id;
+
+  await pool.query(
+    `
+      UPDATE refresh_tokens
+      SET revoked_at = NOW()
+      WHERE family_id = $1
+        AND revoked_at IS NULL
+    `,
+    [familyId],
+  );
 }

@@ -18,6 +18,14 @@ export function createAccessToken(userId) {
   );
 }
 
+export function verifyAccessToken(token) {
+  return jwt.verify(token, config.jwt.accessSecret, {
+    algorithms: ['HS256'],
+    issuer: 'secure-auth-api',
+    audience: 'secure-auth-client',
+  });
+}
+
 export function generateRefreshToken() {
   return crypto.randomBytes(64).toString('base64url');
 }

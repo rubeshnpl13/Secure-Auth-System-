@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Secure Auth System — create a new account."
+    />
+    <title>Create account · Secure Auth</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+  </head>
+
+  <body>
+    <main class="auth-page">
+      <section class="auth-card" aria-labelledby="page-title">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">S</span>
+          <span>Secure Auth</span>
+        </div>
+
+        <h1 id="page-title">Create your account</h1>
+        <p class="subtitle">
+          Use a unique password with at least 12 characters.
+        </p>
+
+        <form id="signup-form" novalidate>
+          <div class="form-group">
+            <label for="email">Email address</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autocomplete="username"
+              inputmode="email"
+              maxlength="254"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autocomplete="new-password"
+              minlength="12"
+              maxlength="128"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="confirm-password">Confirm password</label>
+            <input
+              id="confirm-password"
+              name="confirmPassword"
+              type="password"
+              autocomplete="new-password"
+              minlength="12"
+              maxlength="128"
+              required
+            />
+          </div>
+
+          <p
+            id="form-message"
+            class="form-message"
+            role="alert"
+            aria-live="polite"
+          ></p>
+
+          <button id="submit-button" type="submit">Create account</button>
+        </form>
+
+        <p class="form-footer">
+          Already have an account?
+          <a href="/">Sign in</a>
+        </p>
+      </section>
+    </main>
+
+    <script type="module" src="/js/signup.js"></script>
+  </body>
+</html>

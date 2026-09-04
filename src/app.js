@@ -14,7 +14,20 @@ app.disable('x-powered-by');
 
 app.use(
   helmet({
-    contentSecurityPolicy: false,
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        baseUri: ["'none'"],
+        fontSrc: ["'self'"],
+        formAction: ["'self'"],
+        frameAncestors: ["'none'"],
+        imgSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'"],
+        connectSrc: ["'self'"],
+      },
+    },
     crossOriginEmbedderPolicy: false,
   }),
 );
@@ -36,6 +49,7 @@ app.use(
 
 app.use(express.json({ limit: '10kb' }));
 app.use(cookieParser());
+app.use(express.static('public'));
 
 app.get('/', (req, res) => {
   res.json({

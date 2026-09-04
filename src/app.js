@@ -1,10 +1,38 @@
+import cors from 'cors';
 import express from 'express';
-import { pool } from './db/pool.js';
-import authRoutes from './routes/auth.routes.js';
+import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
+import { config } from './config/env.js';
+import { pool } from './db/pool.js';
 import { requireAuth } from './middleware/require-auth.js';
+import { globalApiLimiter } from './middleware/rate-limiters.js';
+import authRoutes from './routes/auth.routes.js';
 
 const app = express();
+
+app.disable('x-powered-by');
+
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+  }),
+);
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin || origin === config.frontendOrigin) {
+        return callback(null, true);
+      }
+
+      return callback(new Error('Origin not allowed by CORS'));
+    },
+    credentials: true,
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  }),
+);
 
 app.use(express.json({ limit: '10kb' }));
 app.use(cookieParser());
@@ -34,15 +62,9 @@ app.get('/health', async (req, res) => {
   }
 });
 
+app.use('/api', globalApiLimiter);
 app.use('/api/auth', authRoutes);
 
-app.use((err, req, res, next) => {
-  console.error(err);
-
-  res.status(500).json({
-    message: 'Internal server error',
-  });
-});
 app.get('/api/me', requireAuth, async (req, res, next) => {
   try {
     const result = await pool.query(
@@ -71,8 +93,34 @@ app.get('/api/me', requireAuth, async (req, res, next) => {
       },
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
+});
+
+app.use((req, res) => {
+  return res.status(404).json({
+    message: 'Route not found',
+  });
+});
+
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && 'body' in err) {
+    return res.status(400).json({
+      message: 'Invalid JSON request body',
+    });
+  }
+
+  if (err.message === 'Origin not allowed by CORS') {
+    return res.status(403).json({
+      message: 'Origin not allowed',
+    });
+  }
+
+  console.error(err);
+
+  return res.status(500).json({
+    message: 'Internal server error',
+  });
 });
 
 export default app;

@@ -10,6 +10,7 @@ import {
   validateSignupInput,
 } from '../validators/auth.validator.js';
 import { config } from '../config/env.js';
+import { loginLimiter, signupLimiter } from '../middleware/rate-limiters.js';
 
 function refreshCookieOptions() {
   return {
@@ -32,7 +33,7 @@ function clearRefreshCookie(res) {
 
 const router = Router();
 
-router.post('/signup', async (req, res, next) => {
+router.post('/signup', signupLimiter, async (req, res, next) => {
   try {
     const validation = validateSignupInput(req.body);
 
@@ -52,7 +53,7 @@ router.post('/signup', async (req, res, next) => {
   }
 });
 
-router.post('/login', async (req, res, next) => {
+router.post('/login', loginLimiter, async (req, res, next) => {
   try {
     const validation = validateLoginInput(req.body);
 

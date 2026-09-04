@@ -9,10 +9,18 @@ const required = [
   'DB_USER',
   'DB_PASSWORD',
   'JWT_ACCESS_SECRET',
+  'FRONTEND_ORIGIN',
 ];
 
 if (process.env.JWT_ACCESS_SECRET.length < 64) {
   throw new Error('JWT_ACCESS_SECRET must be at least 64 characters long');
+}
+let frontendOrigin;
+
+try {
+  frontendOrigin = new URL(process.env.FRONTEND_ORIGIN).origin;
+} catch {
+  throw new Error('FRONTEND_ORIGIN must be a valid URL');
 }
 
 for (const key of required) {
@@ -41,6 +49,7 @@ if (!allowedEnvironments.includes(process.env.NODE_ENV)) {
 export const config = {
   port,
   env: process.env.NODE_ENV,
+  frontendOrigin,
   database: {
     host: process.env.DB_HOST,
     port: dbPort,

@@ -8,11 +8,11 @@ Live demo: https://secure-auth-system-onbt.onrender.com/
 
 ### Account Creation authorize and unauthorize 
 
-![Test with token](assets/account creation.png)
+![Test with token](assets/account_creation.png)
 
 ### Cookies Test
 
-![Cookies](assets/cookies txt.png)
+![Cookies](assets/cookies_txt.png)
 
 ### Token Unit Test
 
@@ -35,7 +35,7 @@ Live demo: https://secure-auth-system-onbt.onrender.com/
 
 ## Architecture
 
-![architecture](assets/Architecture Secure Auth.jpg)
+![architecture](assets/Architecture.jpg)
 
 ## Authentication Flow
 

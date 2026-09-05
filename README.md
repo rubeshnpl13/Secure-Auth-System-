@@ -35,7 +35,7 @@ Live demo: https://secure-auth-system-onbt.onrender.com/
 
 ## Architecture
 
-![architecture](assets/Architecture.jpg)
+![architecture](assets/architecture.png)
 
 ## Authentication Flow
 
